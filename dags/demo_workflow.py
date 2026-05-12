@@ -4,6 +4,8 @@ from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator, BranchPythonOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 
+from helpers import *
+
 # 1. Define default arguments for scheduling and retries
 default_args = {
     'owner': 'data_team',
@@ -25,41 +27,18 @@ with DAG(
 ) as dag:
 
     # Feature A: PythonOperator & XComs (Data Passing)
-    def fetch_sales_data(**kwargs):
-        # Simulating data ingestion
-        sales_amount = 15000
-        print(f"Fetched sales total: ${sales_amount}")
-        # Returning a value automatically stores it in XCom
-        return sales_amount
-
     task_fetch_data = PythonOperator(
         task_id='fetch_sales_data',
         python_callable=fetch_sales_data,
     )
 
     # Feature B: Conditional Branching
-    def check_data_quality(**kwargs):
-        # Pull data from the previous task using XCom
-        ti = kwargs['ti']
-        fetched_amount = ti.xcom_pull(task_ids='fetch_sales_data')
-        
-        if fetched_amount > 0:
-            return 'process_us_revenue' # Proceed to parallel processing
-        else:
-            return 'halt_pipeline'      # Divert to empty stop task
-
     task_branch = BranchPythonOperator(
         task_id='validate_data_quality',
         python_callable=check_data_quality,
     )
 
     # Feature C: Parallel Execution (Independent Workers)
-    def process_us(**kwargs):
-        print("Processing North American region data...")
-
-    def process_eu(**kwargs):
-        print("Processing European region data...")
-
     task_process_us = PythonOperator(
         task_id='process_us_revenue',
         python_callable=process_us,
@@ -75,9 +54,6 @@ with DAG(
     )
 
     # Feature D: Trigger Rules (Joining paths)
-    def send_notification():
-        print("Pipeline completed successfully. Alerting team.")
-
     task_notify = PythonOperator(
         task_id='send_success_notification',
         python_callable=send_notification,

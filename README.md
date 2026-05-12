@@ -26,6 +26,11 @@ echo -e "AIRFLOW_UID=$(id -u)" > .env
 docker compose up airflow-init
 ```
 
+Edit .env file to add additional requirement
+```
+_PIP_ADDITIONAL_REQUIREMENTS=dag-factory>=1.1.0
+```
+
 Start airflow setup
 
 ```

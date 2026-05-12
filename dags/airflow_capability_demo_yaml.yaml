@@ -1,0 +1,41 @@
+airflow_capability_demo_yaml:
+  default_args:
+    owner: "data_team"
+    start_date: "2026-01-01"
+    retries: 1
+  schedule: "@daily"
+  catchup: false
+  tasks:
+    fetch_sales_data:
+      operator: airflow.providers.standard.operators.python.PythonOperator
+      python_callable_name: fetch_sales_data
+      python_callable_file: /opt/airflow/dags/helpers.py # Path to your logic
+    
+    validate_data_quality:
+      operator: airflow.providers.standard.operators.python.BranchPythonOperator
+      python_callable_name: check_data_quality
+      python_callable_file: /opt/airflow/dags/helpers.py
+      dependencies: [fetch_sales_data]
+
+    process_us_revenue:
+      operator: airflow.providers.standard.operators.python.PythonOperator
+      python_callable_name: process_us
+      python_callable_file: /opt/airflow/dags/helpers.py
+      dependencies: [validate_data_quality]
+
+    process_eu_revenue:
+      operator: airflow.providers.standard.operators.python.PythonOperator
+      python_callable_name: process_eu
+      python_callable_file: /opt/airflow/dags/helpers.py
+      dependencies: [validate_data_quality]
+
+    halt_pipeline:
+      operator: airflow.providers.standard.operators.empty.EmptyOperator
+      dependencies: [validate_data_quality]
+
+    send_success_notification:
+      operator: airflow.providers.standard.operators.python.PythonOperator
+      python_callable_name: send_notification
+      python_callable_file: /opt/airflow/dags/helpers.py
+      trigger_rule: "all_done"
+      dependencies: [process_us_revenue, process_eu_revenue, halt_pipeline]

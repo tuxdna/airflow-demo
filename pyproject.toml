@@ -6,4 +6,5 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "apache-airflow>=3.2.1",
+    "dag-factory>=1.1.0",
 ]
